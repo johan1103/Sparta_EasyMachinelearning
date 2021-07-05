@@ -1,0 +1,93 @@
+//캐긍에서 데이터셋을 받기 위한 key,username입력 (앞으로도 계속 써야함)
+
+import os
+os.environ['KAGGLE_USERNAME'] = 'kimtaehyoung' # username
+os.environ['KAGGLE_KEY'] = 'b2df7c93d9592d296c10473a1b452dce' # key
+
+//데이터 셋에서 받아오는 코드
+!kaggle datasets download -d ashydv/advertising-dataset
+
+//받은 데이터는 압축된 Zip 형태이므로 압축 해제
+!unzip /content/advertising-dataset.zip
+
+// ---------------import 목록-------------------------
+//머신러닝 하면서 기본적으로 import할 것들
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam, SGD
+import numpy as np
+
+// 파일을 읽어오는 방식이 pandas의 방식
+import pandas as pd
+
+//압축 해제를 위한 import
+import matplotlib.pyplot as plt
+
+//그래프 표시를 위한 import
+import seaborn as sns
+
+//트레이닝셋과 테스트 셋을 분리해줌
+from sklearn.model_selection import train_test_split
+
+// ------------------------------------------------------
+
+
+//데이터셋 로드
+df = pd.read_csv('Salary.csv')
+
+//데이터셋 크기 살펴보기
+print(df.shape)
+
+x_data = np.array(df[['YearsExperience']], dtype=np.float32)//데이터셋 가공
+y_data = np.array(df['Salary'], dtype=np.float32)
+
+x_data = x_data.reshape((-1, 1))//모양을 맞춰주는 과정,코드내용은 변하지 않음
+y_data = y_data.reshape((-1, 1))
+
+print(x_data.shape)
+print(y_data.shape)
+
+x_train, x_val, y_train, y_val = train_test_split(x_data, y_data, test_size=0.2, random_state=2021)
+
+print(x_train.shape, x_val.shape)
+print(y_train.shape, y_val.shape)
+
+model = Sequential([
+  Dense(1)
+])
+
+//오차계산방식,learning rate 설정
+model.compile(loss='mean_absolute_error', optimizer=Adam(lr=1500000))
+
+//오차계산방식(성능측정지표)을 소개해주는 웹사이트 https://mizykk.tistory.com/102
+
+//학습시작
+model.fit(
+    x_train,
+    y_train,
+    validation_data=(x_val, y_val), # 검증 데이터를 넣어주면 한 epoch이 끝날때마다 자동으로 검증
+    epochs=200 # epochs 복수형으로 쓰기!, 계산횟수설정
+)
+
+//전체 데이터셋 살펴보기
+sns.pairplot(df, x_vars=['YearsExperience'], y_vars=['Salary'], height=4)
+
+//결과 그래프로 출력
+y_pred = model.predict(x_val)
+
+print(y_pred.shape)
+plt.scatter(x_val[:, 0], y_val)
+plt.scatter(x_val[:, 0], y_pred, color='r')
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
