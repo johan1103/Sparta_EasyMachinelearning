@@ -1,0 +1,76 @@
+import os
+os.environ['KAGGLE_USERNAME'] = 'kimtaehyoung' # username
+os.environ['KAGGLE_KEY'] = 'b2df7c93d9592d296c10473a1b452dce' # key
+
+!kaggle datasets download -d kandij/diabetes-dataset
+!unzip diabetes-dataset.zip
+
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam, SGD
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt 
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler #최대값,최소값이 제각각인 변수들을 일관되게 하기 위한 정규화를 사용할 라이브러리
+
+#데이터 확인
+df = pd.read_csv('diabetes2.csv')
+df.head(5)
+
+#결과 데이터(y값) 확인
+sns.countplot(x=df['Outcome'])
+
+#변수 요소중에 비어있는게 있는 변수들 개수 출력
+print(df.isnull().sum())
+
+#데이터 가공 (y값과 x값 분류)
+x_data = df.drop(columns=['Outcome'], axis=1)
+x_data = x_data.astype(np.float32)
+x_data.head(5)
+y_data = df[['Outcome']]
+y_data = y_data.astype(np.float32)
+y_data.head(5)
+
+#자료들 정규분표화 (0~1사이의 값으로 비율 맞춰서 변환)
+scaler = StandardScaler()
+x_data_scaled = scaler.fit_transform(x_data)
+
+print(x_data.values[0])
+print(x_data_scaled[0])
+
+#트레이닝셋과 테스트셋 나누기
+x_train, x_val, y_train, y_val = train_test_split(x_data, y_data, test_size=0.2, random_state=2021)
+
+print(x_train.shape, x_val.shape)
+print(y_train.shape, y_val.shape)
+
+#분석전, 시각적으로 결과값과 변수값 분호 확인
+sns.pairplot(df, x_vars=['Glucose', 'BloodPressure', 'Insulin'], y_vars=['Outcome'], height=4)
+
+#이진논리회귀이므로 sigmoid모델함수 사용
+model = Sequential([
+  Dense(1, activation='sigmoid')
+])
+
+#손실함수,optimizer,정확도를 0~1사이로 나타내주는 metrics의 acc사용
+model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.01), metrics=['acc'])
+
+model.fit(
+    x_train,
+    y_train,
+    validation_data=(x_val, y_val), # 검증 데이터를 넣어주면 한 epoch이 끝날때마다 자동으로 검증
+    epochs=100 # epochs 복수형으로 쓰기!
+)
+
+
+#자료의 정규분표화 시키면 좋은점
+#1. 변수들의 크기 차이가(보통)줄어들어서 극소값이 있는부분이 완만해져서 learningrate가 작아서 빠져나올 수 있는 확률이 높아진다
+#2. 통일되게 같은 범위에 변수들을 넣을 수 있음
+
+#이진논리회귀는? 결과값이 통과,실패와 같이 결과가 디지털값인 경우에 활용 할 수 있으며 선형회귀와의 공통점은 손실함수값이 최소가 되도록
+#모델을 찾아나간다는 점이고, 다른점은 선형회귀는 일차함수를 사용하지만 이진논리회귀는 sigmoid모델함수(1/(1+e^x))를 사용한다.
+
+
+
